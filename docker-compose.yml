@@ -1,0 +1,31 @@
+services:
+
+  b_fastapi:
+    build: ./b_fastapi
+    container_name: b_fastapi
+    ports:
+      - "8000:8000"
+    volumes:
+      # - ./b_fastapi:/app # hot reload (solo en desarrollo)
+      - ./decks:/app/decks
+      - ./templates:/app/templates
+      - ./deck_meta:/app/deck_meta
+    environment:
+      - MODEL_HOST=http://host.docker.internal:1234
+      - APPWRITE_ENDPOINT=https://fra.cloud.appwrite.io/v1 
+      - APPWRITE_PROJECT_ID=6886b9bf0002628555a3
+      - APPWRITE_BUCKET_ID_DECKS=6886c589000bd8eb87ab
+      - APPWRITE_DB_ID=6886c1e2002e79c0f38c
+      - APPWRITE_COLLECTION_ID_TEMPLATES=6886c3c50004923db8b9
+      - APPWRITE_COLLECTION_ID_DECK_META=6886c4a30008b428223f
+      - AUTH_URL=https://auth-ankiml.onrender.com 
+      # - MODEL_HOST=http://localhost:1234
+
+  ui:
+    build: ./UI
+    container_name: ui
+    ports:
+      - "3000:80"
+    depends_on:
+      - b_fastapi
+
