@@ -1,8 +1,8 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
     Box, VStack, HStack, Text, Select, Button, Input, Textarea,
     Tabs, TabList, TabPanels, Tab, TabPanel, FormControl, FormLabel,
-    FormHelperText, useToast, Card, CardBody, Divider, Alert, AlertIcon, Flex
+    FormHelperText, useToast, Card, CardBody, Divider, Alert, AlertIcon, Flex, Editable, EditablePreview, EditableTextarea
 } from '@chakra-ui/react';
 import { useDropzone } from 'react-dropzone';
 import { keyframes } from '@emotion/react';
@@ -56,35 +56,35 @@ const lightAnimation = keyframes`
 
 const PdfIcon = ({ size = 24, color = "#070707ff" }) => {
     return (
-        <svg 
-            width={size} 
-            height={size} 
-            viewBox="0 0 24 24" 
-            fill="none" 
+        <svg
+            width={size}
+            height={size}
+            viewBox="0 0 24 24"
+            fill="none"
             xmlns="http://www.w3.org/2000/svg"
         >
-            <path 
-                d="M6 2a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6H6z" 
+            <path
+                d="M6 2a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6H6z"
                 fill="#fff"
                 stroke={color}
                 strokeWidth="1"
             />
-            <path 
-                d="M14 2v6h6" 
+            <path
+                d="M14 2v6h6"
                 stroke={color}
                 strokeWidth="1"
                 fill="none"
             />
-            <line x1="7" y1="11" x2="17" y2="11" stroke={color} strokeWidth="1" opacity="0.3"/>
-            <line x1="7" y1="13" x2="15" y2="13" stroke={color} strokeWidth="1" opacity="0.3"/>
-            <line x1="7" y1="15" x2="16" y2="15" stroke={color} strokeWidth="1" opacity="0.3"/>
-            <rect x="5" y="16.5" width="14" height="4" rx="1" fill="red"/>
-            <text 
-                x="12" 
-                y="20" 
-                textAnchor="middle" 
-                fontSize="3" 
-                fontWeight="bold" 
+            <line x1="7" y1="11" x2="17" y2="11" stroke={color} strokeWidth="1" opacity="0.3" />
+            <line x1="7" y1="13" x2="15" y2="13" stroke={color} strokeWidth="1" opacity="0.3" />
+            <line x1="7" y1="15" x2="16" y2="15" stroke={color} strokeWidth="1" opacity="0.3" />
+            <rect x="5" y="16.5" width="14" height="4" rx="1" fill="red" />
+            <text
+                x="12"
+                y="20"
+                textAnchor="middle"
+                fontSize="3"
+                fontWeight="bold"
                 fill="white"
             >
                 PDF
@@ -92,6 +92,12 @@ const PdfIcon = ({ size = 24, color = "#070707ff" }) => {
         </svg>
     )
 }
+
+//funcion que recibe 2 parametros, arr que son los datos crudos de la tarjeta y len(numero de campos que exige la plantilla tanto en front y back)
+//normalizeTolen asegura que cada tarjeta creada coincida con la cantidad de campos que definimos en nuestra plantilla, ya sea rellenando o recortando segun sea el caso
+
+const normalizeToLen = (arr = [], len) =>
+    Array.from({ length: len }, (_, i) => arr[i] ?? "");//se crea un arreglo nuevo de tamaño len, el calback se ejecuta una vez por cada indice, si el arreglo existe se copia y si no de pone ""
 
 // Componente PdfUpload integrado
 function PdfUpload({ templateId, onFileSelected, currentFile = null }) {
@@ -143,20 +149,20 @@ function PdfUpload({ templateId, onFileSelected, currentFile = null }) {
 
     return (
         <Box>
-            <Box 
+            <Box
                 h="150px"
                 {...getRootProps()}
                 border="2px dashed"
                 borderColor={
-                    !templateId ? 'gray.300' : 
-                    isDragActive ? 'teal.500' : 'blue.300'
+                    !templateId ? 'gray.300' :
+                        isDragActive ? 'teal.500' : 'blue.300'
                 }
                 p={4}
                 rounded="md"
                 textAlign="center"
                 bg={
                     !templateId ? 'gray.100' :
-                    isDragActive ? 'teal.50' : 'gray.50'
+                        isDragActive ? 'teal.50' : 'gray.50'
                 }
                 cursor={!templateId ? 'not-allowed' : 'pointer'}
                 opacity={!templateId ? 0.6 : 1}
@@ -167,12 +173,12 @@ function PdfUpload({ templateId, onFileSelected, currentFile = null }) {
                 transition="all 0.3s"
             >
                 <input {...getInputProps()} />
-                
-                <Flex 
-                    direction="column" 
-                    align="center" 
-                    justify="center" 
-                    h="full" 
+
+                <Flex
+                    direction="column"
+                    align="center"
+                    justify="center"
+                    h="full"
                     gap={3}
                 >
                     {!templateId ? (
@@ -203,12 +209,12 @@ function PdfUpload({ templateId, onFileSelected, currentFile = null }) {
             </Box>
 
             {currentFile && (
-                <Box 
+                <Box
                     mt={3}
-                    p={3} 
-                    bg="green.50" 
-                    rounded="md" 
-                    border="1px solid" 
+                    p={3}
+                    bg="green.50"
+                    rounded="md"
+                    border="1px solid"
                     borderColor="green.200"
                 >
                     <Flex align="center" gap={2}>
@@ -246,20 +252,40 @@ export default function CreateDeckPage({ onBack, onCreated }) {
     const [editedCards, setEditedCards] = useState([]); // [{id, question, answer}]
     const [loading, setLoading] = useState(false);
 
+
+
     //carga las plantillas, aqui se llaman al backend para obtener las plantillas existentes
     useEffect(() => {
+        let cancelled = false;
         (async () => {
             try {
-                const { data } = await api.get('/templates/list/', { timeout: 60000 });
-                setTemplates(Array.isArray(data) ? data : []);
+                const { data } = await api.get("/templates/list/", { timeout: 60000 });
+                if (cancelled) return;
+
+                // normaliza forma de cada plantilla
+                const list = (Array.isArray(data) ? data : []).map(t => ({
+                    template_id: t.template_id ?? t.id,
+                    template_name: t.template_name ?? t.name ?? "Sin nombre",
+                    front: Array.isArray(t.front) ? t.front : [],
+                    back: Array.isArray(t.back) ? t.back : [],
+                }));
+
+                setTemplates(list);
+
+                // auto-selecciona si solo hay una
+                if (!templateId && list.length === 1) {
+                    setTemplateId(String(list[0].template_id));
+                }
             } catch (err) {
-                const reason = err.code === 'ECONNABORTED'
-                    ? 'Tiempo de espera agotado'
+                const reason = err.code === "ECONNABORTED"
+                    ? "Tiempo de espera agotado"
                     : (err.response?.status ? `HTTP ${err.response.status}` : err.message);
-                toast({ title: 'No se pudieron cargar las plantillas', description: reason, status: 'error' });
+                toast({ title: "No se pudieron cargar las plantillas", description: reason, status: "error" });
             }
         })();
-    }, [toast]);
+        return () => { cancelled = true }; // evita setState tras unmount
+
+    }, []); //se carga una vez
 
     //validaciones, verifica que haya un modelo cargado 
     const ensureModel = () => {
@@ -269,21 +295,6 @@ export default function CreateDeckPage({ onBack, onCreated }) {
         }
         return true;
     };
-
-    const pickTemplate = () => {
-        const t = templates.find(x => String(x.template_id ?? x.id) === String(templateId));
-        if (!t) {
-            toast({ title: 'Plantilla no encontrada', status: 'error' });
-            return null;
-        }
-        return {
-            template_id: t.template_id ?? t.id,
-            template_name: t.name ?? t.template_name,
-            front: t.front ?? [],
-            back: t.back ?? [],
-        };
-    };
-
     const toEditorCards = (data) => {
         const arr =
             Array.isArray(data) ? data :
@@ -294,15 +305,18 @@ export default function CreateDeckPage({ onBack, onCreated }) {
 
         return arr.map((c, i) => ({
             id: c.id ?? c.uuid ?? `${Date.now()}-${i}`, // id estable
-            question:
-                Array.isArray(c.campos_anverso) ? c.campos_anverso.join('\n') :
-                    Array.isArray(c.front) ? c.front.join('\n') :
-                        (c.question ?? ''),
-            answer:
-                Array.isArray(c.campo_reverso) ? c.campo_reverso.join('\n') :
-                    Array.isArray(c.campos_reverso) ? c.campos_reverso.join('\n') :
-                        Array.isArray(c.back) ? c.back.join('\n') :
-                            (c.answer ?? ''),
+            frontFields:
+                Array.isArray(c.campos_anverso) ? c.campos_anverso :
+                    Array.isArray(c.campos_front) ? c.campos_front :
+                        Array.isArray(c.front) ? c.front :
+                            (typeof c.question === 'string' ? [c.question] : []),
+
+            backFields:
+                Array.isArray(c.campo_reverso) ? c.campo_reverso :
+                    Array.isArray(c.campos_reverso) ? c.campos_reverso :
+                        Array.isArray(c.back) ? c.back :
+
+                            (typeof c.answer === 'string' ? [c.answer] : []),
         }));
     };
 
@@ -313,18 +327,15 @@ export default function CreateDeckPage({ onBack, onCreated }) {
             toast({ title: 'Selecciona plantilla y PDF', status: 'warning' });
             return;
         }
-        const template = pickTemplate();
-        if (!template) return;
-
-        //esto evitara plantillas sin campos
-        if (!Array.isArray(template.front) || template.front.length === 0 ||
-            !Array.isArray(template.back) || template.back.length === 0) {
+        const t = selectedTemplate;
+        if (!t || t.front.length === 0 || t.back.length === 0) {
             toast({
                 title: 'Plantilla inválida',
                 description: 'La plantilla seleccionada no tiene campos "front" y "back".',
                 status: 'error'
             });
             return;
+
         }
 
         setLoading(true);
@@ -332,7 +343,7 @@ export default function CreateDeckPage({ onBack, onCreated }) {
             //arma el JSON de instrucciones
             const reqJson = {
                 prompt: { system_prompt: pdfPrompt || '', temperature, max_tokens: maxTokens },
-                template,
+                template: t,
             };
 
             //arma el FormData con AMBAS partes
@@ -340,9 +351,27 @@ export default function CreateDeckPage({ onBack, onCreated }) {
             form.append('pdf_file', pdfFile, pdfFile.name);
             form.append('Create_Deck_Request', JSON.stringify(reqJson));
 
+        
             const { data } = await api.post('/decks/create/', form, { timeout: 0 });
 
-            setEditedCards(toEditorCards(data));
+            const raw = toEditorCards(data);
+
+            //raw es el arreglo de tarjetas crudas que devuelve el back.
+            // map recorre cada tarjeta cruda (cada elemento se llama c)
+            //(...) spread operator copia todas las propiedades de la tarjeta cruda "c"
+            // (...c aqui se copia todo el contenido original y despues sobrescribe frontFields y bakFields con los resultados de normalizeTolen
+
+            //c.frontFields es el arreglo con los valores que vinieron para el anverso de la tarjeta(arr: son los datos crudos)
+            //t.front.length es el numero de campos que la plantilla exige que debe haber en el anverso(len en normalizTolen)
+            const cards = raw.map(c => ({
+                ...c,
+                frontFields: normalizeToLen(c.frontFields, t.front.length),
+                backFields: normalizeToLen(c.backFields, t.back.length),
+            }));
+
+
+            setEditedCards(cards);
+
 
             setDraft({ deckId: data?.deckId ?? data?.id ?? 'tmp' });
             toast({ title: 'Borrador creado desde PDF', status: 'success' });
@@ -364,10 +393,8 @@ export default function CreateDeckPage({ onBack, onCreated }) {
             toast({ title: 'Selecciona plantilla y escribe un tema', status: 'warning' });
             return;
         }
-        const template = pickTemplate();
-        if (!template) return;
-        if (!Array.isArray(template.front) || template.front.length === 0 ||
-            !Array.isArray(template.back) || template.back.length === 0) {
+        const t = selectedTemplate;
+        if (!t || t.front.length === 0 || t.back.length === 0) {
             toast({
                 title: 'Plantilla inválida',
                 description: 'La plantilla seleccionada no tiene campos "front" y "back".',
@@ -376,16 +403,26 @@ export default function CreateDeckPage({ onBack, onCreated }) {
             return;
         }
 
+
         setLoading(true);
         try {
             const payload = {
                 topic,
                 prompt: { system_prompt: pdfPrompt || '', temperature, max_tokens: maxTokens },
-                template
+                template: t,
             };
             const { data } = await api.post('/decks/create-from-topic/', payload, { timeout: 0 });
+            
+            const raw = toEditorCards(data);
 
-            setEditedCards(toEditorCards(data));
+            //c.frontFields es el arreglo con los valores que vinieron para el anverso de la tarjeta(arr: son los datos crudos)
+            //t.front.length es el tamaño de campos que la plantilla dice que debe haber en el anverso
+            const cards = raw.map(c => ({
+                ...c,
+                frontFields: normalizeToLen(c.frontFields, t.front.length),
+                backFields: normalizeToLen(c.backFields, t.back.length),
+            }));
+            setEditedCards(cards);
 
             setDraft({ deckId: data?.deckId ?? data?.id ?? 'tmp' });
             toast({ title: 'Borrador creado desde Prompt', status: 'success' });
@@ -400,266 +437,343 @@ export default function CreateDeckPage({ onBack, onCreated }) {
         }
     };
 
-    // se genera el archivo .apkg
-    const handleConfirm = async () => {
-        if (!draft?.deckId) {
-            toast({ title: 'No hay borrador para confirmar', status: 'warning' });
-            return;
-        }
-        const t = pickTemplate();
-        if (!t) return;
-
-        setLoading(true);
-        try {
-            const payload = {
-                deckname: deckName,
-                template: {
-                    template_name: t.template_name,
-                    template_id: t.template_id,
-                    front: t.front ?? [],
-                    back: t.back ?? []
-                },
-                flashc: editedCards.map(c => ({
-                    campos_anverso: (c.question || '').split('\n').filter(Boolean),
-                    campo_reverso: (c.answer || '').split('\n').filter(Boolean),
-                }))
-            };
-
-            const { data } = await api.post('/decks/confirm/', payload, { timeout: 0 });
-
-            toast({
-                title: `Mazo creado: ${data?.deck_name || deckName}`,
-                description: data?.file_path || 'Archivo .apkg generado',
-                status: 'success',
-                duration: 6000
-            });
-            // refresca en CardsPage
-            onCreated?.();
-            setDraft(null);
-            setEditedCards([]);
-        } catch (err) {
-            const reason = err.code === 'ECONNABORTED'
-                ? 'Tiempo de espera agotado'
-                : (err.response?.status ? `HTTP ${err.response.status}` : err.message);
-            console.error('Confirm error:', err);
-            toast({ title: 'Error confirmando mazo', description: reason, status: 'error' });
-        } finally {
-            setLoading(false);
-        }
+const selectedTemplate = useMemo(() => {
+    const t = templates.find(x => String(x.template_id ?? x.id) === String(templateId));
+    if (!t) return null;
+    return {
+        template_id: t.template_id ?? t.id,
+        template_name: t.name ?? t.template_name,
+        front: t.front ?? [],
+        back: t.back ?? [],
     };
+}, [templates, templateId]);
 
-    //muestra previsualización + inputs editables para question/answer
-    const DraftEditor = () => {
-        if (!draft) return null;
-        return (
-            <Card mt={6}>
-                <CardBody>
-                    {/* PREVIEW de tarjetitas */}
-                    {editedCards.length > 0 && (
-                        <Card mt={2} variant="outline">
-                            <CardBody>
-                                <Text fontWeight="bold" mb={3}>Previsualización de tarjetas</Text>
-                                <VStack align="stretch" spacing={3}>
-                                    {editedCards.map((c, idx) => (
-                                        <Box
-                                            key={`preview-${c.id ?? idx}`}
-                                            p={3}
-                                            border="1px dashed"
-                                            borderColor="gray.300"
-                                            borderRadius="md"
-                                        >
-                                            <Text fontSize="xs" color="gray.500" mb={1}>PREGUNTA</Text>
-                                            <Text whiteSpace="pre-wrap" mb={2}>{c.question || '—'}</Text>
-                                            <Divider />
-                                            <Text fontSize="xs" color="gray.500" mt={2} mb={1}>RESPUESTA</Text>
-                                            <Text whiteSpace="pre-wrap">{c.answer || '—'}</Text>
-                                        </Box>
-                                    ))}
-                                </VStack>
-                            </CardBody>
-                        </Card>
-                    )}
 
-                    <Text fontWeight="bold" mb={2}>Borrador (Deck ID: {draft.deckId})</Text>
-                    <Divider mb={4} />
 
-                    <FormControl mb={4}>
-                        <FormLabel>Nombre del mazo</FormLabel>
-                        <Input value={deckName} onChange={(e) => setDeckName(e.target.value)} />
-                    </FormControl>
+// se genera el archivo .apkg
+const handleConfirm = async () => {
+    if (!draft?.deckId) {
+        toast({ title: 'No hay borrador para confirmar', status: 'warning' });
+        return;
+    }
+    const t = selectedTemplate;
+    if (!t) return;
 
-                    <VStack align="stretch" spacing={3}>
-                        {editedCards.map((c) => (
-                            <Box key={c.id} p={3} border="1px solid" borderColor="gray.200" borderRadius="md">
-                                <FormControl mb={2}>
-                                    <FormLabel>Pregunta</FormLabel>
-                                    <Textarea
-                                        value={c.question || ''}
-                                        onChange={(e) => {
-                                            const v = e.target.value;
-                                            setEditedCards(prev =>
-                                                prev.map(it => it.id === c.id ? { ...it, question: v } : it)
-                                            );
-                                        }}
-                                    />
-                                </FormControl>
+    setLoading(true);
+    try {
+        const payload = {
+            deckname: deckName,
+            template: {
+                template_name: t.template_name,
+                template_id: t.template_id,
+                front: t.front ?? [],
+                back: t.back ?? []
+            },
+            flashc: editedCards.map(c => ({
+                campos_anverso: (c.frontFields || []).map(s => s.trim()).filter(Boolean),
+                campo_reverso: (c.backFields || []).map(s => s.trim()).filter(Boolean),
+            }))
+        };
 
-                                <FormControl>
-                                    <FormLabel>Respuesta</FormLabel>
-                                    <Textarea
-                                        value={c.answer || ''}
-                                        onChange={(e) => {
-                                            const v = e.target.value;
-                                            setEditedCards(prev =>
-                                                prev.map(it => it.id === c.id ? { ...it, answer: v } : it)
-                                            );
-                                        }}
-                                    />
-                                </FormControl>
-                            </Box>
-                        ))}
+        const { data } = await api.post('/decks/confirm/', payload, { timeout: 0 });
 
+        toast({
+            title: `Mazo creado: ${data?.deck_name || deckName}`,
+            description: data?.file_path || 'Archivo .apkg generado',
+            status: 'success',
+            duration: 6000
+        });
+        // refresca en CardsPage
+        onCreated?.();
+        setDraft(null);
+        setEditedCards([]);
+    } catch (err) {
+        const reason = err.code === 'ECONNABORTED'
+            ? 'Tiempo de espera agotado'
+            : (err.response?.status ? `HTTP ${err.response.status}` : err.message);
+        console.error('Confirm error:', err);
+        toast({ title: 'Error confirmando mazo', description: reason, status: 'error' });
+    } finally {
+        setLoading(false);
+    }
+};
+
+
+
+return (
+    <Box p={4}>
+        <HStack mb={4} justify="space-between" align="start">
+            <Text fontSize="xl" fontWeight="bold">Crear nuevo mazo</Text>
+            <Button onClick={onBack} variant="ghost">Volver</Button>
+        </HStack>
+
+        <Alert status="info" mb={4} borderRadius="md">
+            <AlertIcon />
+            <Box>
+                <Text fontWeight="semibold">Aviso:</Text>
+                <Text fontSize="sm">
+                    Generar un mazo puede tardar varios minutos según el tamaño del PDF, la plantilla y el modelo seleccionado.
+                    No cierres la app durante el proceso.
+                </Text>
+            </Box>
+        </Alert>
+
+        <VStack align="stretch" spacing={4} mb={4}>
+            <FormControl>
+                <FormLabel>Plantilla</FormLabel>
+                <Select
+                    placeholder="Selecciona plantilla"
+                    value={templateId}
+                    onChange={(e) => setTemplateId(e.target.value)}
+                >
+                    {templates.map(t => (
+                        <option key={t.template_id || t.id} value={t.template_id || t.id}>
+                            {t.name || t.template_name}
+                        </option>
+                    ))}
+                </Select>
+                <FormHelperText>Obligatoria para ambas formas de creación</FormHelperText>
+            </FormControl>
+
+            <HStack spacing={4}>
+                <FormControl>
+                    <FormLabel>Temperatura</FormLabel>
+                    <Input
+                        type="number" step="0.1" min={0} max={2}
+                        value={temperature}
+                        onChange={(e) => setTemperature(Number(e.target.value))}
+                    />
+                    <FormHelperText>0 = determinista, 2 = creativo</FormHelperText>
+                </FormControl>
+                <FormControl>
+                    <FormLabel>Máx. tokens</FormLabel>
+                    <Input
+                        type="number" min={64} max={4096}
+                        value={maxTokens}
+                        onChange={(e) => setMaxTokens(Number(e.target.value))}
+                    />
+                    <FormHelperText>Límite de salida del modelo</FormHelperText>
+                </FormControl>
+            </HStack>
+        </VStack>
+
+        <Tabs colorScheme="purple" variant="enclosed">
+            <TabList>
+                <Tab>Desde PDF</Tab>
+                <Tab>Desde Prompt</Tab>
+            </TabList>
+            <TabPanels>
+                <TabPanel>
+                    <VStack align="stretch" spacing={4}>
+                        <FormControl>
+                            <FormLabel>Archivo PDF</FormLabel>
+                            <PdfUpload
+                                templateId={templateId}
+                                onFileSelected={(file) => setPdfFile(file)}
+                                currentFile={pdfFile}
+                            />
+                        </FormControl>
+                        <FormControl>
+                            <FormLabel>Instrucciones (opcional)</FormLabel>
+                            <Textarea value={pdfPrompt} onChange={(e) => setPdfPrompt(e.target.value)} />
+                        </FormControl>
+                        <Button
+                            colorScheme="purple"
+                            onClick={handleCreateFromPdf}
+                            isLoading={loading}
+                            isDisabled={!templateId || !pdfFile || !modeloCargado}
+                        >
+                            Generar borrador desde PDF
+                        </Button>
                     </VStack>
+                </TabPanel>
 
-                    <HStack mt={4} spacing={3}>
-                        <Button colorScheme="purple" onClick={handleConfirm} isLoading={loading}>
-                            Confirmar y generar .apkg
+                <TabPanel>
+                    <VStack align="stretch" spacing={4}>
+                        <FormControl>
+                            <FormLabel>Tema / Prompt</FormLabel>
+                            <Textarea
+                                value={topic}
+                                onChange={(e) => {
+                                    if (!templateId) {
+                                        toast({
+                                            title: 'Selecciona una plantilla',
+                                            description: 'Debes elegir una plantilla antes de escribir el prompt.',
+                                            status: 'warning',
+                                        });
+                                        return;
+                                    }
+                                    setTopic(e.target.value);
+                                }}
+                                placeholder="p.ej., Introducción a React"
+                            />
+                        </FormControl>
+                        <Button
+                            colorScheme="purple"
+                            onClick={handleCreateFromPrompt}
+                            isLoading={loading}
+                            isDisabled={!templateId || !topic || !modeloCargado}
+                        >
+                            Generar borrador desde Prompt
                         </Button>
-                        <Button variant="ghost" onClick={() => { setDraft(null); setEditedCards([]); }}>
-                            Cancelar
-                        </Button>
-                    </HStack>
-                </CardBody>
-            </Card>
-        );
-    };
+                    </VStack>
+                </TabPanel>
+            </TabPanels>
+        </Tabs>
+
+        <Box mt={6}>
+            <ModelControl />
+        </Box>
+
+
+        <DraftEditor
+            draft={draft}
+            deckName={deckName}
+            setDeckName={setDeckName}
+            editedCards={editedCards}
+            setEditedCards={setEditedCards}
+            loading={loading}
+            handleConfirm={handleConfirm}
+            setDraft={setDraft}
+            template={selectedTemplate}
+        />
+    </Box>
+);
+}
+
+//muestra previsualización + inputs editables para question/answer
+
+function DraftEditor({
+
+    draft,
+    deckName,
+    setDeckName,
+    editedCards,
+    setEditedCards,
+    loading,
+    handleConfirm,
+    setDraft,
+    template,
+}) {
+    if (!draft || !template) return null;
 
     return (
-        <Box p={4}>
-            <HStack mb={4} justify="space-between" align="start">
-                <Text fontSize="xl" fontWeight="bold">Crear nuevo mazo</Text>
-                <Button onClick={onBack} variant="ghost">Volver</Button>
-            </HStack>
+        <Card mt={6}>
+            <CardBody>
+                <Text fontWeight="bold" mb={2}>Mazo (Deck ID: {draft.deckId})</Text>
+                <Divider mb={4} />
 
-            <Alert status="info" mb={4} borderRadius="md">
-                <AlertIcon />
-                <Box>
-                    <Text fontWeight="semibold">Aviso:</Text>
-                    <Text fontSize="sm">
-                        Generar un mazo puede tardar varios minutos según el tamaño del PDF, la plantilla y el modelo seleccionado.
-                        No cierres la app durante el proceso.
-                    </Text>
-                </Box>
-            </Alert>
-
-            <VStack align="stretch" spacing={4} mb={4}>
-                <FormControl>
-                    <FormLabel>Plantilla</FormLabel>
-                    <Select
-                        placeholder="Selecciona plantilla"
-                        value={templateId}
-                        onChange={(e) => setTemplateId(e.target.value)}
-                    >
-                        {templates.map(t => (
-                            <option key={t.template_id || t.id} value={t.template_id || t.id}>
-                                {t.name || t.template_name}
-                            </option>
-                        ))}
-                    </Select>
-                    <FormHelperText>Obligatoria para ambas formas de creación</FormHelperText>
+                <FormControl mb={4}>
+                    <FormLabel>Nombre del mazo</FormLabel>
+                    <Input value={deckName} onChange={(e) => setDeckName(e.target.value)} />
                 </FormControl>
 
-                <HStack spacing={4}>
-                    <FormControl>
-                        <FormLabel>Temperatura</FormLabel>
-                        <Input
-                            type="number" step="0.1" min={0} max={2}
-                            value={temperature}
-                            onChange={(e) => setTemperature(Number(e.target.value))}
-                        />
-                        <FormHelperText>0 = determinista, 2 = creativo</FormHelperText>
-                    </FormControl>
-                    <FormControl>
-                        <FormLabel>Máx. tokens</FormLabel>
-                        <Input
-                            type="number" min={64} max={4096}
-                            value={maxTokens}
-                            onChange={(e) => setMaxTokens(Number(e.target.value))}
-                        />
-                        <FormHelperText>Límite de salida del modelo</FormHelperText>
-                    </FormControl>
+                {editedCards.length === 0 && (
+                    <Text fontSize="sm" color="gray.500">No hay tarjetas en el borrador.</Text>
+                )}
+
+                <VStack align="stretch" spacing={3}>
+                    {editedCards.map((c, idx) => (
+                        <Box
+                            key={c.id}
+                            p={3}
+                            border="1px solid"
+                            borderColor="gray.200"
+                            borderRadius="md"
+                            bg="white"
+                        >
+                            <Text fontSize="sm" color="gray.500" mb={2}>
+                                Tarjeta #{idx + 1}
+                            </Text>
+
+                            {/* PREGUNTA */}
+                         {/*dentro del map(editedCards)*/}
+                            <Text fontSize="xs" color="gray.500" mb={1}>ANVERSO</Text>
+
+                            {template.front.map((label, i) => (
+                                <FormControl key={`front-${c.id}-${i}`} mb={2}>
+                                    <FormLabel fontSize="xs" color="gray.500">
+                                        {label || `Front #${i + 1}`}
+                                    </FormLabel>
+
+                                    <Editable
+                                        value={c.frontFields?.[i] ?? ""}
+                                        onChange={(v) => {
+                                            setEditedCards(prev => prev.map(it => {
+                                                if (it.id !== c.id) return it;
+                                                const next = normalizeToLen(it.frontFields, template.front.length);
+                                                next[i] = v;
+                                                return { ...it, frontFields: next };
+                                            }));
+                                        }}
+                                        submitOnBlur
+                                        isPreviewFocusable
+                                        placeholder="—"
+                                    >
+                                        <EditablePreview whiteSpace="pre-wrap" px={2} py={2} border="1px dashed" borderColor="gray.300" borderRadius="md" />
+                                        <EditableTextarea whiteSpace="pre-wrap" px={2} py={2} minH="80px" resize="vertical"
+                                            border="1px solid" borderColor="purple.300" borderRadius="md"
+                                            _focusVisible={{ outline: 'none', boxShadow: '0 0 0 1px var(--chakra-colors-purple-400)' }} />
+                                    </Editable>
+                                </FormControl>
+                            ))}
+
+                            <Divider my={2} />
+                            <Text fontSize="xs" color="gray.500" mb={1}>REVERSO</Text>
+
+                            {template.back.map((label, i) => (
+                                <FormControl key={`back-${c.id}-${i}`} mb={2}>
+                                    <FormLabel fontSize="xs" color="gray.500">
+                                        {label || `Back #${i + 1}`}
+                                    </FormLabel>
+
+                                    <Editable
+                                        value={c.backFields?.[i] ?? ""}
+                                        onChange={(v) => {
+                                            setEditedCards(prev => prev.map(it => {
+                                                if (it.id !== c.id) return it;
+                                                const next = normalizeToLen(it.backFields, template.back.length);
+                                                next[i] = v;
+                                                return { ...it, backFields: next };
+                                            }));
+                                        }}
+                                        submitOnBlur
+                                        isPreviewFocusable
+                                        placeholder="—"
+                                    >
+                                        <EditablePreview whiteSpace="pre-wrap" px={2} py={2} border="1px dashed" borderColor="gray.300" borderRadius="md" />
+                                        <EditableTextarea whiteSpace="pre-wrap" px={2} py={2} minH="80px" resize="vertical"
+                                            border="1px solid" borderColor="purple.300" borderRadius="md"
+                                            _focusVisible={{ outline: 'none', boxShadow: '0 0 0 1px var(--chakra-colors-purple-400)' }} />
+                                    </Editable>
+                                </FormControl>
+                            ))}
+
+                        </Box>
+                    ))}
+                </VStack>
+
+                <HStack mt={4} spacing={3}>
+                    <Button
+                        colorScheme="purple"
+                        onClick={handleConfirm}
+                        isLoading={loading}
+                        isDisabled={loading || editedCards.length === 0}
+                    >
+                        Confirmar y generar .apkg
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        onClick={() => { setDraft(null); setEditedCards([]); }}
+                    >
+                        Cancelar
+                    </Button>
                 </HStack>
-            </VStack>
-
-            <Tabs colorScheme="purple" variant="enclosed">
-                <TabList>
-                    <Tab>Desde PDF</Tab>
-                    <Tab>Desde Prompt</Tab>
-                </TabList>
-                <TabPanels>
-                    <TabPanel>
-                        <VStack align="stretch" spacing={4}>
-                            <FormControl>
-                                <FormLabel>Archivo PDF</FormLabel>
-                                <PdfUpload 
-                                    templateId={templateId}
-                                    onFileSelected={(file) => setPdfFile(file)}
-                                    currentFile={pdfFile}
-                                />
-                            </FormControl>
-                            <FormControl>
-                                <FormLabel>Instrucciones (opcional)</FormLabel>
-                                <Textarea value={pdfPrompt} onChange={(e) => setPdfPrompt(e.target.value)} />
-                            </FormControl>
-                            <Button
-                                colorScheme="purple"
-                                onClick={handleCreateFromPdf}
-                                isLoading={loading}
-                                isDisabled={!templateId || !pdfFile || !modeloCargado}
-                            >
-                                Generar borrador desde PDF
-                            </Button>
-                        </VStack>
-                    </TabPanel>
-
-                    <TabPanel>
-                        <VStack align="stretch" spacing={4}>
-                            <FormControl>
-                                <FormLabel>Tema / Prompt</FormLabel>
-                                <Textarea
-                                    value={topic}
-                                    onChange={(e) => {
-                                        if (!templateId) {
-                                            toast({
-                                                title: 'Selecciona una plantilla',
-                                                description: 'Debes elegir una plantilla antes de escribir el prompt.',
-                                                status: 'warning',
-                                            });
-                                            return;
-                                        }
-                                        setTopic(e.target.value);
-                                    }}
-                                    placeholder="p.ej., Introducción a React"
-                                />
-                            </FormControl>
-                            <Button
-                                colorScheme="purple"
-                                onClick={handleCreateFromPrompt}
-                                isLoading={loading}
-                                isDisabled={!templateId || !topic || !modeloCargado}
-                            >
-                                Generar borrador desde Prompt
-                            </Button>
-                        </VStack>
-                    </TabPanel>
-                </TabPanels>
-            </Tabs>
-
-            <Box mt={6}>
-                <ModelControl />
-            </Box>
-
-            <DraftEditor />
-        </Box>
+            </CardBody>
+        </Card>
     );
-}
+};
+
+
+
+

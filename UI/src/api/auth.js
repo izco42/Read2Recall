@@ -116,9 +116,6 @@ export async function authLogin({ email, password }) {
 
 }
 
-
-
-
 export function authLogout() {
     saveSession(null);
 }

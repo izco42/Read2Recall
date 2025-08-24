@@ -28,7 +28,8 @@ export default function SignupModal({ isOpen, onClose }) {
     setName("");
   };
 
-  const handleSignup = async () => {
+  const handleSignup = async (e) => {
+    e?.preventDefault();
     setLoading(true);
     try {
       await authSignup({ email, password, name });
@@ -51,28 +52,42 @@ export default function SignupModal({ isOpen, onClose }) {
   return (
     <Modal isOpen={isOpen} onClose={handleClose} isCentered>
       <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>Crear cuenta</ModalHeader>
-        <ModalCloseButton />
-        <ModalBody>
-          <FormControl mb={3}>
-            <FormLabel>Nombre</FormLabel>
-            <Input value={name} onChange={(e) => setName(e.target.value)} />
-          </FormControl>
-          <FormControl mb={3}>
-            <FormLabel>Email</FormLabel>
-            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-          </FormControl>
-          <FormControl>
-            <FormLabel>Contraseña</FormLabel>
-            <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-          </FormControl>
-        </ModalBody>
-        <ModalFooter>
-          <Button mr={3} onClick={handleClose} variant="ghost">Cancelar</Button>
-          <Button colorScheme="purple" onClick={handleSignup} isLoading={loading}>Crear</Button>
-        </ModalFooter>
-      </ModalContent>
+      <form onSubmit={handleSignup}>
+        <ModalContent>
+          <ModalHeader>Crear cuenta</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <FormControl mb={3}>
+              <FormLabel>Nombre</FormLabel>
+              <Input value={name} onChange={(e) => setName(e.target.value)}
+                autoComplete="name"
+                autoFocus
+                isDisabled={loading} />
+            </FormControl>
+            <FormControl mb={3}>
+              <FormLabel>Email</FormLabel>
+              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+                autoFocus
+                isDisabled={loading} />
+            </FormControl>
+            <FormControl>
+              <FormLabel>Contraseña</FormLabel>
+              <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
+                autoComplete="new-password"
+                isDisabled={loading} />
+
+            </FormControl>
+          </ModalBody>
+          <ModalFooter>
+            <Button mr={3} onClick={handleClose} variant="ghost">Cancelar</Button>
+            <Button type="submit" colorScheme="purple" isLoading={loading}>Crear</Button>
+          </ModalFooter>
+        </ModalContent>
+
+
+      </form>
+
     </Modal>
   );
 }

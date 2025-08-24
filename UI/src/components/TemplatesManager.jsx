@@ -12,8 +12,8 @@ export default function TemplatesManager() {
     const [templates, setTemplates] = useState([]);
     const [loading, setLoading] = useState(false);
     const [name, setName] = useState("");
-    const [front, setFront] = useState("Pregunta");
-    const [back, setBack] = useState("Respuesta");
+    const [front, setFront] = useState(["Pregunta"]);
+    const [back, setBack] = useState(["Respuesta"]);
 
     //aqui se cargan las plantillas
     const fetchTemplates = async () => {
@@ -30,16 +30,26 @@ export default function TemplatesManager() {
 
     useEffect(() => { fetchTemplates(); }, []);
 
+    //front
+    const updateFront = (i, val) => setFront(prev => prev.map((v, idx) => idx === i ? val : v))
+    const addFront = () => setFront(prev => [...prev, ""]);
+    const removeFront = (i) => setFront(prev => prev.filter((__, idx) => idx !== i))
+
+    //back
+    const updateBack = (i, val) => setBack(prev => prev.map((v, idx) => idx === i ? val : v))
+    const addBack = () => setBack(prev => [...prev, ""]);
+    const removeBack = (i) => setBack(prev => prev.filter((__, idx) => idx !== i))
+
     const handleCreate = async () => {
         const nameTrim = name.trim();
-        const frontTrim = front.trim();
-        const backTrim = back.trim();
+        const frontTrim = front.map(f => f.trim()).filter(Boolean);
+        const backTrim = back.map(b => b.trim()).filter(Boolean);
 
         if (!nameTrim) {
             toast({ title: "Pon un nombre a la plantilla", status: "warning" });
             return;
         }
-        if (!frontTrim || !backTrim) {
+        if (frontTrim.length === 0 || backTrim.length === 0) {
             toast({ title: "Define al menos un campo para front y back", status: "warning" });
             return;
         }
@@ -53,14 +63,14 @@ export default function TemplatesManager() {
         try {
             await api.post("/templates/create/", {
                 template_name: nameTrim,
-                front: [frontTrim],   
-                back: [backTrim],
+                front: frontTrim,
+                back: backTrim,
             });
             toast({ title: "Plantilla creada", status: "success" });
             setName("");
-            setFront("Pregunta");
-            setBack("Respuesta");
-            fetchTemplates();      
+            setFront(["Pregunta"]);
+            setBack(["Respuesta"]);
+            fetchTemplates();
         } catch (err) {
             toast({ title: "No se pudo crear", status: "error" });
         }
@@ -87,9 +97,61 @@ export default function TemplatesManager() {
                 <Text fontWeight="semibold">Crear nueva</Text>
                 <HStack>
                     <Input placeholder="Nombre (p. ej. Básica Q/A)" value={name} onChange={e => setName(e.target.value)} />
-                    <Input placeholder="Front" value={front} onChange={e => setFront(e.target.value)} />
-                    <Input placeholder="Back" value={back} onChange={e => setBack(e.target.value)} />
-                    <Button colorScheme="purple" onClick={handleCreate}>Crear</Button>
+
+                    <VStack align="stretch" spacing={2}>
+                        <HStack justify="space-between">
+                            <Text fontWeight="semibold">Anverso (front)</Text>
+                            <Button size="xs" onClick={addFront}>+ campo</Button>
+                        </HStack>
+
+                        {front.map((val, i) => (
+                            <HStack key={`front-${i}`}>
+                                <Input
+                                    placeholder={`Front #${i + 1}`}
+                                    value={val}
+                                    onChange={(e) => updateFront(i, e.target.value)}
+                                />
+                                <Button
+                                    size="xs"
+                                    colorScheme="red"
+                                    onClick={() => removeFront(i)}
+                                    isDisabled={front.length === 1} // evita quedarse en 0 si quieres
+                                >
+                                    Quitar
+                                </Button>
+                            </HStack>
+                        ))}
+                    </VStack>
+
+                    <VStack align="stretch" spacing={2}>
+                        <HStack justify="space-between">
+                            <Text fontWeight="semibold">Reverso (back)</Text>
+                            <Button size="xs" onClick={addBack}>+ campo</Button>
+                        </HStack>
+
+                        {back.map((val, i) => (
+                            <HStack key={`back-${i}`}>
+                                <Input
+                                    placeholder={`Back #${i + 1}`}
+                                    value={val}
+                                    onChange={(e) => updateBack(i, e.target.value)}
+                                />
+                                <Button
+                                    size="xs"
+                                    colorScheme="red"
+                                    onClick={() => removeBack(i)}
+                                    isDisabled={back.length === 1}
+                                >
+                                    Quitar
+                                </Button>
+                            </HStack>
+                        ))}
+                    </VStack>
+
+                    <HStack justify="flex-end">
+                        <Button colorScheme="purple" onClick={handleCreate}>Crear</Button>
+
+                    </HStack>
                 </HStack>
             </VStack>
 

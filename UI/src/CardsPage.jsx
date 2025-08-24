@@ -8,7 +8,6 @@ import {
   CardBody,
   Heading,
   Flex,
-  IconButton,
   useToast,
   SimpleGrid,
   Tabs,
@@ -22,13 +21,12 @@ import {
 } from '@chakra-ui/react';
 import {
   AddIcon,
-  ViewIcon,
   InfoIcon,
   WarningIcon
 } from '@chakra-ui/icons';
 
 import Deck from './components/Deck';
-import StudyMode from './components/StudyMode';
+//import StudyMode from './components/StudyMode';
 import NoteCard from './components/NoteCard';
 import api from '../api';
 import CreateDeckPage from './components/CreateDeckPage';
@@ -391,10 +389,6 @@ function CardsPage({ onBack }) {
                   <InfoIcon mr={2} />
                   Mis Mazos ({decks.length})
                 </Tab>
-                <Tab>
-                  <ViewIcon mr={2} />
-                  Cartas Cargadas ({notes.length})
-                </Tab>
                 <Tab>Plantillas</Tab> {/* ← añadido */}
               </TabList>
 
@@ -432,41 +426,7 @@ function CardsPage({ onBack }) {
                       </CardBody>
                     </Card>
                   )}
-                </TabPanel>
-
-                {/* Panel 2: Cartas */}
-                <TabPanel px={0}>
-                  {notes.length > 0 ? (
-                    <Box
-                      display="grid"
-                      gridTemplateColumns="repeat(auto-fit, minmax(320px, 1fr))"
-                      gap={6}
-                    >
-                      {notes.map(note => (
-                        <NoteCard
-                          key={note.id}
-                          note={note}
-                          onEdit={handleEditNote}
-                          onDelete={handleDeleteNote}
-                        />
-                      ))}
-                    </Box>
-                  ) : (
-                    <Card variant="outline" textAlign="center" py={12}>
-                      <CardBody>
-                        <VStack spacing={4}>
-                          <ViewIcon boxSize={12} color="gray.400" />
-                          <Text fontSize="lg" color="gray.600">
-                            No hay cartas cargadas
-                          </Text>
-                          <Text fontSize="sm" color="gray.500">
-                            Selecciona un mazo para ver sus cartas
-                          </Text>
-                        </VStack>
-                      </CardBody>
-                    </Card>
-                  )}
-                </TabPanel>
+                </TabPanel>               
 
                 {/* Panel 3: Plantillas */}
                 <TabPanel px={0}>

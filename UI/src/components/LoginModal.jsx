@@ -28,7 +28,8 @@ export default function LoginModal({ isOpen, onClose }) {
     setPassword("");
   };
 
-  const handleLogin = async () => {
+  const handleLogin = async (e) => {
+    e?.preventDefault();
     setLoading(true);
     try {
       await login({ email, password });
@@ -51,24 +52,39 @@ export default function LoginModal({ isOpen, onClose }) {
   return (
     <Modal isOpen={isOpen} onClose={handleClose} isCentered>
       <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>Iniciar sesión</ModalHeader>
-        <ModalCloseButton />
-        <ModalBody>
-          <FormControl mb={3}>
-            <FormLabel>Email</FormLabel>
-            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-          </FormControl>
-          <FormControl>
-            <FormLabel>Contraseña</FormLabel>
-            <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-          </FormControl>
-        </ModalBody>
-        <ModalFooter>
-          <Button mr={3} onClick={handleClose} variant="ghost">Cancelar</Button>
-          <Button colorScheme="purple" onClick={handleLogin} isLoading={loading}>Entrar</Button>
-        </ModalFooter>
-      </ModalContent>
+
+      <form onSubmit={handleLogin}>
+        <ModalContent>
+
+          <ModalHeader>Iniciar sesión</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <FormControl mb={3}>
+              <FormLabel>Email</FormLabel>
+              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+
+                autoComplete="email"
+                autoFocus
+                isDisabled={loading}
+              />
+            </FormControl>
+            <FormControl isRequired>
+              <FormLabel>Contraseña</FormLabel>
+              <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+                isDisabled={loading} />
+            </FormControl>
+          </ModalBody>
+          <ModalFooter>
+            <Button mr={3} onClick={handleClose} variant="ghost">Cancelar</Button>
+            <Button type="submit" colorScheme="purple" isLoading={loading}>
+              Entrar
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+
+      </form>
+
     </Modal>
   );
 }
