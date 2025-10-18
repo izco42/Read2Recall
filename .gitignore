@@ -12,6 +12,6 @@ venv/
 # Ignorar node_modules de UI
 UI/node_modules/
 #Ignorar archivos de usuario
-decks
-templates
-decks_meta
+decks/
+templates/
+decks_meta/
