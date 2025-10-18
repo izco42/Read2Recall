@@ -11,3 +11,7 @@ __pycache__/
 venv/
 # Ignorar node_modules de UI
 UI/node_modules/
+#Ignorar archivos de usuario
+decks
+templates
+decks_meta
