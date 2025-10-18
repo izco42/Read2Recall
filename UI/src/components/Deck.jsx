@@ -31,9 +31,7 @@ import {
 } from '@chakra-ui/react';
 import {
   SettingsIcon,
-  EditIcon,
   DeleteIcon,
-  ViewIcon,
   CopyIcon,
   ChevronRightIcon,
   StarIcon
@@ -95,28 +93,6 @@ function Deck({ deck, onPlay, onEdit, onDelete, onViewCards, onDuplicate }) {
     }
   };
 
-  // Función para determinar el estado de estudio
-  const getStudyStatus = () => {
-    if (!lastStudied) {
-      return { text: 'Nuevo', color: 'blue' };
-    }
-    
-    const lastStudyDate = new Date(lastStudied);
-    const now = new Date();
-    const daysDiff = Math.floor((now - lastStudyDate) / (1000 * 60 * 60 * 24));
-    
-    if (daysDiff === 0) {
-      return { text: 'Hoy', color: 'green' };
-    } else if (daysDiff === 1) {
-      return { text: 'Ayer', color: 'yellow' };
-    } else if (daysDiff <= 7) {
-      return { text: `Hace ${daysDiff} días`, color: 'orange' };
-    } else {
-      return { text: 'Hace tiempo', color: 'red' };
-    }
-  };
-
-  const studyStatus = getStudyStatus();
 
   const handleCardClick = (e) => {
     // Prevenir que el click se propague si viene de elementos del menú
@@ -143,15 +119,6 @@ function Deck({ deck, onPlay, onEdit, onDelete, onViewCards, onDuplicate }) {
       console.warn('Acción no disponible:', action);
     }
   };
-/*
-  const getCardCountBadge = () => {
-    //if (cardCount === 0) return { text: 'Sin cartas', colorScheme: 'gray' };
-    if (cardCount < 10) return { text: `${cardCount} cartas`, colorScheme: 'blue' };
-    if (cardCount < 50) return { text: `${cardCount} cartas`, colorScheme: 'green' };
-    return { text: `${cardCount} cartas`, colorScheme: 'purple' };
-  };
-*/
-  //nst cardBadge = getCardCountBadge();
 
   return (
     <>
@@ -171,43 +138,10 @@ function Deck({ deck, onPlay, onEdit, onDelete, onViewCards, onDuplicate }) {
         position="relative"
         overflow="hidden"
       >
-        {/* Indicador de estado en la esquina */}
-        <Box
-          position="absolute"
-          top={0}
-          right={0}
-          w="0"
-          h="0"
-          borderStyle="solid"
-          borderWidth="0 30px 30px 0"
-          borderColor={`transparent ${studyStatus.color}.400 transparent transparent`}
-          opacity={0.7}
-        />
-
-        <CardHeader pb={2}>
-          <HStack justify="space-between" align="start">
-            <VStack align="start" spacing={2} flex={1}>
-              <Heading size="md" color={textColor} noOfLines={2} lineHeight="1.3">
-                {deckName}
-              </Heading>
-              
-              <HStack spacing={2} wrap="wrap">
-               
-                
-                {lastStudied && (
-                  <Badge colorScheme={studyStatus.color} variant="outline" fontSize="xs">
-                    {studyStatus.text}
-                  </Badge>
-                )}
-                
-                {templateName !== 'Template por defecto' && (
-                  <Badge colorScheme="cyan" variant="subtle" fontSize="xs">
-                    {templateName}
-                  </Badge>
-                )}
-              </HStack>
-            </VStack>
-            
+      
+        <CardHeader pb={2} position="relative">
+          {/* Botón de menú en esquina superior derecha */}
+          <Box position="absolute" top={2} right={2} zIndex={1}>
             <Menu>
               <MenuButton
                 as={IconButton}
@@ -234,8 +168,6 @@ function Deck({ deck, onPlay, onEdit, onDelete, onViewCards, onDuplicate }) {
                   </VStack>
                 </MenuItem>
                 
-              
-                
                 <Divider />
                 
                 <MenuItem 
@@ -245,8 +177,6 @@ function Deck({ deck, onPlay, onEdit, onDelete, onViewCards, onDuplicate }) {
                 >
                   Duplicar mazo
                 </MenuItem>
-                
-                
                 
                 <Divider />
                 
@@ -260,7 +190,28 @@ function Deck({ deck, onPlay, onEdit, onDelete, onViewCards, onDuplicate }) {
                 </MenuItem>
               </MenuList>
             </Menu>
-          </HStack>
+          </Box>
+
+          {/* Contenido del header */}
+          <VStack align="start" spacing={2} pr={10}>
+            <Heading size="md" color={textColor} noOfLines={2} lineHeight="1.3">
+              {deckName}
+            </Heading>
+            
+            <HStack spacing={2} wrap="wrap">
+              {lastStudied && (
+                <Badge colorScheme={studyStatus.color} variant="outline" fontSize="xs">
+                  {studyStatus.text}
+                </Badge>
+              )}
+              
+              {templateName !== 'Template por defecto' && (
+                <Badge colorScheme="cyan" variant="subtle" fontSize="xs">
+                  {templateName}
+                </Badge>
+              )}
+            </HStack>
+          </VStack>
         </CardHeader>
 
         <CardBody pt={0}>
@@ -316,10 +267,6 @@ function Deck({ deck, onPlay, onEdit, onDelete, onViewCards, onDuplicate }) {
               </Flex>
               
               <HStack spacing={2} wrap="wrap">
-                {/*dge colorScheme={cardBadge.colorScheme} variant="solid">
-                  {cardBadge.text}
-                </Badge>*/}
-                
                 {lastStudied && (
                   <Badge colorScheme={studyStatus.color} variant="outline">
                     {studyStatus.text}
@@ -349,31 +296,7 @@ function Deck({ deck, onPlay, onEdit, onDelete, onViewCards, onDuplicate }) {
                 </Box>
               </Box>
               
-              {/* Estadísticas del mazo */}
-              <Box w="100%">
-                <Text fontSize="sm" color={subtextColor} mb={2} fontWeight="medium">
-                  📊 Estadísticas
-                </Text>
-                <Box bg="blue.50" p={3} borderRadius="md">
-                  <HStack justify="space-between">
-                    <VStack align="start" spacing={1}>
-                      <Text fontSize="2xl" fontWeight="bold" color="blue.600">
-                        {cardCount}
-                      </Text>
-                     {/*<Text fontSize="sm" color="blue.700">Cartas totales</Text>*/}
-                    </VStack>
-                    
-                    {lastStudied && (
-                      <VStack align="end" spacing={1}>
-                        <Text fontSize="lg" fontWeight="bold" color="green.600">
-                          {studyStatus.text}
-                        </Text>
-                        <Text fontSize="sm" color="green.700">Estado de estudio</Text>
-                      </VStack>
-                    )}
-                  </HStack>
-                </Box>
-              </Box>
+             
               
               {/* Fechas y metadatos */}
               {(lastStudied || createdAt) && (
@@ -403,35 +326,12 @@ function Deck({ deck, onPlay, onEdit, onDelete, onViewCards, onDuplicate }) {
                 </Box>
               )}
               
-              {/* Información técnica en modo desarrollo */}
-              {isDevelopment && (
-                <Box w="100%" p={3} bg="gray.100" borderRadius="md" borderLeft="4px solid" borderColor="gray.400">
-                  <Text fontSize="sm" color="gray.600" mb={2} fontWeight="bold">
-                    🔧 Información técnica (desarrollo)
-                  </Text>
-                  <VStack align="start" spacing={1} fontSize="xs" fontFamily="mono">
-                    <Text color="gray.600">
-                      <Text as="span" fontWeight="medium">Deck ID:</Text> {deckId}
-                    </Text>
-                    <Text color="gray.600">
-                      <Text as="span" fontWeight="medium">Template ID:</Text> {templateId}
-                    </Text>
-                    <Text color="gray.600">
-                      <Text as="span" fontWeight="medium">Deck Name:</Text> {deck.deck_name || 'N/A'}
-                    </Text>
-                    <Text color="gray.600">
-                      <Text as="span" fontWeight="medium">Normalized Name:</Text> {deck.name || 'N/A'}
-                    </Text>
-                  </VStack>
-                </Box>
-              )}
+              
             </VStack>
           </ModalBody>
           
           <ModalFooter>
             <HStack spacing={3} w="100%">
-              
-            
               <Button variant="ghost" onClick={onClose}>
                 Cerrar
               </Button>

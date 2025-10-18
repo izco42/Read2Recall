@@ -7,9 +7,7 @@ import { AuthProvider } from './context/AuthContext';
 
 
 
-// Tema base de Chakra UI (opcional pero recomendado)
 const theme = extendTheme({
-  // Puedes personalizar tu tema aquí
 });
 
 const container = document.getElementById('root');

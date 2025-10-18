@@ -1,0 +1,22 @@
+{
+  "template_id": "1261130296",
+  "template_name": "basica",
+  "front": [
+    "Pregunta"
+  ],
+  "back": [
+    "Respuesta"
+  ],
+  "user_id": "68d8756acaf373436878",
+  "$id": "68d8954f013a615a357e",
+  "$sequence": 30,
+  "$createdAt": "2025-09-28T01:54:23.005+00:00",
+  "$updatedAt": "2025-09-28T01:54:23.005+00:00",
+  "$permissions": [
+    "read(\"user:68d8756acaf373436878\")",
+    "update(\"user:68d8756acaf373436878\")",
+    "delete(\"user:68d8756acaf373436878\")"
+  ],
+  "$databaseId": "6886c1e2002e79c0f38c",
+  "$collectionId": "6886c3c50004923db8b9"
+}

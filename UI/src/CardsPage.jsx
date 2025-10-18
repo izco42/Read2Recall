@@ -26,8 +26,6 @@ import {
 } from '@chakra-ui/icons';
 
 import Deck from './components/Deck';
-//import StudyMode from './components/StudyMode';
-import NoteCard from './components/NoteCard';
 import api from '../api';
 import CreateDeckPage from './components/CreateDeckPage';
 import TemplatesManager from './components/TemplatesManager';
@@ -164,22 +162,6 @@ function CardsPage({ onBack }) {
     setCurrentView('cards');
   };
 
-  const handleUpdateProgress = (deckId, progressData) => {
-    if (!deckId || !progressData) return;
-
-    const updated = decks.map(d =>
-      (d.id === deckId || d.deck_id === deckId) ? { ...d, ...progressData } : d
-    );
-    setDecks(updated);
-
-    try {
-      localStorage.setItem('study-decks', JSON.stringify(updated));
-    } catch (error) {
-      console.error('Error al guardar progreso:', error);
-    }
-  };
-
-
   const handleDeleteNote = (noteId) => {
     if (!noteId) return;
     setNotes(prevNotes => prevNotes.filter(n => n.id !== noteId));
@@ -253,31 +235,7 @@ function CardsPage({ onBack }) {
     }
   };
 
-  const calculateGlobalStats = () => {
-    const totalDecks = decks.length;
-    const totalCards = notes.length;
-    const studiedCards = notes.filter(n => n && n.studied).length;
 
-    let totalAccuracy = 0;
-    let cardsWithStats = 0;
-
-    notes.forEach(note => {
-      if (note && note.stats && note.stats.timesStudied > 0) {
-        totalAccuracy += note.stats.correctAnswers / note.stats.timesStudied;
-        cardsWithStats++;
-      }
-    });
-
-    const accuracy = cardsWithStats > 0 ? Math.round((totalAccuracy / cardsWithStats) * 100) : 0;
-
-    const cardsForToday = notes.filter(n =>
-      n && n.stats && n.stats.nextReview && new Date(n.stats.nextReview) <= new Date()
-    ).length;
-
-    return { totalDecks, totalCards, studiedCards, accuracy, cardsForToday };
-  };
-
-  const stats = calculateGlobalStats();
 
   const renderCurrentView = () => {
     if (loading) {
@@ -292,17 +250,6 @@ function CardsPage({ onBack }) {
     }
 
     switch (currentView) {
-      case 'study':
-        return (
-          <StudyMode
-            deck={selectedDeck}
-            onExit={() => {
-              setCurrentView('decks');
-              setSelectedDeck(null);
-            }}
-            onUpdateProgress={handleUpdateProgress}
-          />
-        );
 
       case 'create':
         return (

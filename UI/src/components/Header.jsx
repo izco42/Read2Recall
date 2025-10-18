@@ -14,11 +14,16 @@ function Header({ userName = "Invitado" }) {
   const { isLogged, displayName, logout } = useAuth();
 
   return (
-    <Box height="90px" bg="blue.400" px={6} py={4} boxShadow="md">
+    <Box height="90px" bg="#3780ffff" px={6} py={4} boxShadow="md">
       <Flex align="center">
-        <Heading size="2xl" color="white" fontFamily="cursive">
-          Anki Cards
-        </Heading>
+        <Heading size="2xl" color="white" fontFamily="'Lucida Handwriting', cursive" textShadow="
+      -1px -1px 0 #656363ff,
+      1px -1px 0 #656363ff,
+      -1px 1px 0 #656363ff,
+      1px 1px 0 #656363ff">
+      Read <Text as="span" fontFamily="'Verdana', Sans-serif">2</Text>
+      Recall
+      </Heading>
         <Spacer />
         <HStack spacing={4}>
           {!isLogged ? (
